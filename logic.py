@@ -12,6 +12,10 @@ import tempfile
 import os
 from dotenv import load_dotenv
 
+# Disable GPU usage
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # Disable GPU
+
+# Load environment variables from .env file
 load_dotenv()
 
 DB_NAME = os.getenv("DB_NAME")
@@ -22,8 +26,9 @@ DB_PORT = os.getenv("DB_PORT")
 
 app = FastAPI()
 
-base_model = VGG16(weights='imagenet')
-model = Model(inputs=base_model.input, outputs=base_model.get_layer('fc1').output)
+# Load VGG16 model with ImageNet weights and extract features from 'block5_pool' layer
+base_model = VGG16(weights='imagenet', include_top=False)  # Exclude fully connected layers
+model = Model(inputs=base_model.input, outputs=base_model.get_layer('block5_pool').output)
 
 class VideoBytes(BaseModel):
     video_data: bytes
@@ -110,7 +115,6 @@ def compare_with_fixed_vector(Fv_fixed, threshold=0.5):
 
     max_video_id, max_similarity = max(similarities, key=lambda x: x[1])
 
-
     if max_similarity < threshold:
         new_video_id = insert_new_feature_vector(Fv_fixed)
         return new_video_id, max_similarity 
@@ -118,7 +122,6 @@ def compare_with_fixed_vector(Fv_fixed, threshold=0.5):
         return max_video_id, max_similarity
 
 @app.post("/compare-video-bytes/")
-
 async def compare_video(video: VideoBytes):
     try:
         features_fixed = extract_feature_vector(video.video_data, frame_interval=30)
