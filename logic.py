@@ -63,6 +63,7 @@ def extract_frames_from_bytes(video_bytes, frame_interval=1):
         count += 1
 
     cap.release()
+    os.remove(temp_video_path)
     return np.array(frames)
 
 def extract_feature_vector(video_bytes, frame_interval=1):
